@@ -2,6 +2,7 @@
 name = "lumx-ui"
 version = "0.1.0"
 edition = "2021"
+build = "build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -10,6 +11,9 @@ leptos = { version = "0.6", features = [] }
 leptos-use = "0.10.7"
 serde = { version = "1.0", features = ["derive"] }
 serde-json-wasm = "1.0"
+
+[build-dependencies]
+anyhow = { version = "1.0" }
 
 [features]
 hydrate = ["leptos/hydrate"]
