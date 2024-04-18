@@ -1,7 +1,7 @@
 use std::{
-    env::{self},
-    fs::{self},
+    env, fs,
     path::{Path, PathBuf},
+    process::Command,
 };
 
 use anyhow::Context;
@@ -20,7 +20,17 @@ pub fn main() {
     let root_style_ui_path = root_style_path.join("lumx-ui.scss");
 
     fs::create_dir_all(&root_style_path).unwrap();
-    fs::copy("./assets/lumx-ui.css", root_style_ui_path).unwrap();
+
+    Command::new("npx")
+        .args([
+            "tailwindcss",
+            "-i",
+            "./tailwind-entry.css",
+            "-o",
+            &root_style_ui_path.to_str().unwrap(),
+        ])
+        .status()
+        .expect("unable to build lumx styles");
 }
 
 fn get_cargo_target_dir(out_dir: impl AsRef<Path>) -> anyhow::Result<PathBuf> {
