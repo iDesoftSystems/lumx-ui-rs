@@ -11,6 +11,7 @@ leptos = { version = "0.6", features = [] }
 leptos-use = "0.10.7"
 serde = { version = "1.0", features = ["derive"] }
 serde-json-wasm = "1.0"
+uuid = { version = "1.8", features = ["v4", "fast-rng"] }
 
 [build-dependencies]
 anyhow = { version = "1.0" }
