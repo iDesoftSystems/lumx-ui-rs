@@ -44,7 +44,7 @@ pub fn Button(
 
     view! {
         <button
-            class="lumx-button flex justify-center items-center gap-x-1 min-w-40 rounded-md px-3 py-1.5 text-sm disabled:opacity-85 disabled:cursor-wait"
+            class="lumx-button flex justify-center items-center gap-x-1 min-w-full md:min-w-40 rounded-md px-3 py-1.5 text-sm disabled:opacity-85 disabled:cursor-wait"
             class=class_props_by_style
             prop:disabled=move || is_busy_memo.get()
             on:click=on_click>
