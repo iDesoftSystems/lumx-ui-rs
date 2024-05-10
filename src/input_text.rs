@@ -1,17 +1,29 @@
-use leptos::{component, event_target_value, view, IntoView, RwSignal, SignalSet};
+use crate::forms::control::{AbstractFormControl, FormControl};
+use leptos::{component, event_target_value, view, IntoView, SignalGetUntracked};
+use std::sync::Arc;
 use uuid::Uuid;
 
 #[component]
 pub fn InputText(
     #[prop(default = "label")] label: &'static str,
     #[prop(default = "")] placeholder: &'static str,
-    value: RwSignal<String>,
+    control: Arc<FormControl<String>>,
 ) -> impl IntoView {
     let form_id = Uuid::new_v4().to_string();
 
     // notify the new value when the element loses focus
-    let on_blur = move |ev| {
-        value.set(event_target_value(&ev));
+    let on_blur = {
+        let control_ref = Arc::clone(&control);
+
+        move |ev| {
+            let input_value = event_target_value(&ev);
+
+            if input_value.is_empty() {
+                control_ref.set_value(None);
+            } else {
+                control_ref.set_value(Some(event_target_value(&ev)));
+            }
+        }
     };
 
     view! {
@@ -23,7 +35,12 @@ pub fn InputText(
                 placeholder=placeholder
                 id=form_id
                 on:blur=on_blur
-                prop:value=value/>
+                prop:value={
+                    let control_ref = Arc::clone(&control);
+                    let control_value = control_ref.value.get_untracked();
+
+                    control_value.unwrap_or(String::from(""))
+                } />
         </div>
     }
 }

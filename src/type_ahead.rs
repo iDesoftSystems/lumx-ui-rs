@@ -1,11 +1,16 @@
+use std::sync::Arc;
+
 use leptos::{
-    component, create_node_ref, create_signal, ev::MouseEvent, event_target_value, html::Div, view,
-    Callable, Callback, For, IntoView, Resource, RwSignal, Show, SignalGet, SignalGetUntracked,
-    SignalSet, Suspense, WriteSignal,
+    component, create_memo, create_node_ref, create_signal, ev::MouseEvent, event_target_value,
+    html::Div, view, Callable, Callback, For, IntoView, Resource, Show, SignalGet,
+    SignalGetUntracked, SignalSet, Suspense, WriteSignal,
 };
 use leptos_use::{is_some, on_click_outside, watch_debounced};
 
-use crate::icons::x_mark::XMark;
+use crate::{
+    forms::control::{AbstractFormControl, FormControl},
+    icons::x_mark::XMark,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct TypeAheadOption {
@@ -26,15 +31,22 @@ pub fn TypeAhead(
     #[prop(default = 800.0)] debounced_ms: f64,
     suggestions: Resource<String, Vec<TypeAheadOption>>,
     changes: WriteSignal<String>,
-    value: RwSignal<Option<TypeAheadOption>>,
+    control: Arc<FormControl<TypeAheadOption>>,
 ) -> impl IntoView {
     let type_ahead_ref = create_node_ref::<Div>();
+
+    let selected_value = create_memo({
+        let control_ref = Arc::clone(&control);
+
+        move |_| control_ref.value
+    });
 
     let (show_panel_reader, show_panel_writer) = create_signal(false);
 
     // handler to detect clicks outside then element and close open panels.
     let _ = on_click_outside(type_ahead_ref, move |_| {
         let is_panel_open = show_panel_reader.get_untracked();
+
         if is_panel_open {
             show_panel_writer.set(false);
         }
@@ -45,17 +57,14 @@ pub fn TypeAhead(
         show_panel_writer.set(true);
     };
 
-    // select a new option as value
-    let on_select_item = move |option: TypeAheadOption| {
-        value.set(Some(option));
+    let on_select = Callback::from({
+        let control_ref = Arc::clone(&control);
 
-        show_panel_writer.set(false);
-    };
-
-    // clear current value
-    let on_clear_item = move |_ev: MouseEvent| {
-        value.set(None);
-    };
+        move |option: TypeAheadOption| {
+            control_ref.set_value(Some(option));
+            show_panel_writer.set(false);
+        }
+    });
 
     view! {
         <div node_ref=type_ahead_ref
@@ -70,7 +79,7 @@ pub fn TypeAhead(
                     </div>
 
                     <Show
-                        when=move || is_some(value).get()
+                        when=move || is_some(selected_value.get()).get()
                         fallback=move || view! {
                             <div class="type-ahead-placeholder text-sm text-slate-400 min-h-5">
                                 {placeholder}
@@ -78,10 +87,15 @@ pub fn TypeAhead(
                          }>
                         <div class="type-ahead-value flex justify-between flex-row gap-y-1 min-h-5">
                             <div class="text-sm text-slate-900">
-                                {move || value.get().unwrap().label}
+                                {selected_value.get().get().unwrap().label }
                             </div>
 
-                            <div on:click=on_clear_item class="type-ahead-clear cursor-pointer rounded-full hover:bg-slate-200">
+                            <div on:click={
+                                let control_ref = Arc::clone(&control);
+                                move |_ev: MouseEvent| {
+                                    control_ref.set_value(None);
+                                }
+                            } class="type-ahead-clear cursor-pointer rounded-full hover:bg-slate-200">
                                 <XMark class="w-5 h-5 text-slate-900" />
                             </div>
                         </div>
@@ -91,7 +105,7 @@ pub fn TypeAhead(
                 <Show when=move || show_panel_reader.get()>
                     <TypeAheadSearchPanel
                         debounced_ms=debounced_ms
-                        on_select=on_select_item
+                        on_select=on_select
                         changes=changes
                         suggestions=suggestions />
                 </Show>
@@ -135,7 +149,7 @@ fn TypeAheadSearchPanel(
                 aria-labelledby="menu-button"
                 tabindex="-1">
                 <Suspense>
-                    <For each=move || suggestions.get().unwrap()
+                    <For each=move || suggestions.get().unwrap_or_default()
                         key=|i| i.value.clone()
                         let:item>
                         <TypeAheadOptionView
