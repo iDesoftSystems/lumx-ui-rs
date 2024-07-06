@@ -14,6 +14,8 @@ pub enum ButtonStyle {
     Secondary,
 }
 
+const DEFAULT_STYLE_CLASS: &str = "lumx-button flex justify-center items-center gap-x-1 min-w-full md:min-w-40 rounded-md px-3 py-1.5 text-sm disabled:opacity-85 disabled:cursor-wait";
+
 #[component]
 pub fn Button(
     #[prop(default = "label")] label: &'static str,
@@ -36,15 +38,12 @@ pub fn Button(
 
     // button specific properties by style
     let class_props_by_style = match style {
-        ButtonStyle::Primary => String::from("bg-indigo-700 text-white hover:bg-indigo-600"),
-        ButtonStyle::Secondary => String::from(
-            "bg-white border border-slate-200 text-slate-900 hover:bg-slate-100 disabled:bg-slate-200",
-        ),
+        ButtonStyle::Primary => format!("{DEFAULT_STYLE_CLASS} bg-indigo-700 text-white hover:bg-indigo-600"),
+        ButtonStyle::Secondary => format!("{DEFAULT_STYLE_CLASS} bg-white border border-slate-200 text-slate-900 hover:bg-slate-100 disabled:bg-slate-200")
     };
 
     view! {
         <button
-            class="lumx-button flex justify-center items-center gap-x-1 min-w-full md:min-w-40 rounded-md px-3 py-1.5 text-sm disabled:opacity-85 disabled:cursor-wait"
             class=class_props_by_style
             prop:disabled=move || is_busy_memo.get()
             on:click=on_click>
